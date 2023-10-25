@@ -1734,6 +1734,25 @@ $(document).ready(() => {
     }
     openContextMenu(e, args);
   });
+  function aggregateCharges(cid) {
+    let chargesMap = {};
+
+    $(".associated-incidents-user-holder").children("div").each(function(index) {
+        if ($(this).data("id") === cid) {
+            let chargeName = $(this).text().trim();
+            chargesMap[chargeName] = (chargesMap[chargeName] || 0) + 1;
+        }
+    });
+
+    let aggregatedChargesHtml = "";
+
+    for (let charge in chargesMap) {
+        let displayText = chargesMap[charge] > 1 ? `x${chargesMap[charge]} ${charge}` : charge;
+        const randomNum = Math.ceil(Math.random() * 1000).toString();
+    }
+
+    return aggregatedChargesHtml;
+  }
   $(".incidents-ghost-holder").on(
     "contextmenu",
     ".associated-incidents-user-holder",
@@ -1756,33 +1775,29 @@ $(document).ready(() => {
     $(".incidents-charges-table").fadeIn(500);
     $("#current-charges-holder").data("cid", $(this).data("info"));
     $("#current-charges-holder").html("");
-    $(".associated-incidents-user-holder")
-      .children("div")
-      .each(function (index) {
-        if (
-          $(".associated-incidents-user-holder")
-            .children()
-            .eq(index)
-            .data("id") == stupidasscid
-        ) {
-          const randomNum = Math.ceil(
-            Math.random() * 1000
-          ).toString();
-          $("#current-charges-holder").prepend(
-            `<div class="current-charges-tag" data-link="${randomNum}">${$(
-              ".associated-incidents-user-holder"
-            )
-              .children()
-              .eq(index)
-              .html()}</div>`
-          );
+
+    let chargesMap = {};
+
+    $(".associated-incidents-user-holder").children("div").each(function (index) {
+        if ($(".associated-incidents-user-holder").children().eq(index).data("id") == stupidasscid) {
+            let chargeName = $(".associated-incidents-user-holder").children().eq(index).text();
+            chargesMap[chargeName] = (chargesMap[chargeName] || 0) + 1;
         }
-      });
+    });
+
+    for (let charge in chargesMap) {
+        let displayText = chargesMap[charge] > 1 ? `x${chargesMap[charge]} ${charge}` : charge;
+        const randomNum = Math.ceil(Math.random() * 1000).toString();
+        $("#current-charges-holder").prepend(`<div class="current-charges-tag" data-link="${randomNum}">${displayText}</div>`);
+    }
+
     setTimeout(() => {
-      $(".close-all").css("filter", "brightness(30%)");
+        $(".close-all").css("filter", "brightness(30%)");
     }, 250);
+
     $.post(`https://${GetParentResourceName()}/getPenalCode`, JSON.stringify({}));
   });
+
 
   var shiftPressed = false;
   $(document).keydown(function (event) {
@@ -1795,14 +1810,14 @@ $(document).ready(() => {
   });
 
   $(".offenses-main-container").on("mousedown",".offense-item",function (e) {
-      const cid = $("#current-charges-holder").data("cid");
-      const newItem = $(this).find(".offense-item-offense").html();
-      const Fine = +$(this).data("fine");
-      const Sentence = +$(this).data("sentence");
-      if (e.which == 1) {
+    const cid = $("#current-charges-holder").data("cid");
+    const newItem = $(this).find(".offense-item-offense").html();
+    const Fine = +$(this).data("fine");
+    const Sentence = +$(this).data("sentence");
+    if (e.which == 1) {
         let randomNum = Math.ceil(Math.random() * 1000).toString();
-        $(`[data-name="${cid}"]`).prepend(`<div class="white-tag" data-link="${randomNum}"data-id="${cid}">${$(this).find(".offense-item-offense").html()}</div>`);
-        $("#current-charges-holder").prepend(`<div class="current-charges-tag" data-link="${randomNum}">${$(this).find(".offense-item-offense").html()}</div>`);
+        $(`[data-name="${cid}"]`).prepend(`<div class="white-tag" data-link="${randomNum}"data-id="${cid}">${newItem}</div>`);
+        $("#current-charges-holder").prepend(`<div class="current-charges-tag" data-link="${randomNum}">${newItem}</div>`);
 
         const CurrRfine = $(".fine-recommended-amount").filter(`[data-id="${cid}"]`).val();
         const NewFine = +CurrRfine + +Fine;
@@ -1844,6 +1859,7 @@ $(document).ready(() => {
           }
         });
       }
+      $("#current-charges-holder").html(aggregateCharges(cid));
     }
   );
 
@@ -2085,7 +2101,9 @@ $(document).ready(() => {
                     <div class="associated-incidents-user-tag red-tag" data-id="${$(this).data("cid")}">Associated</div>
                 </div>
                 <div class="modify-charges-label"><span class="fas fa-solid fa-info"></span> Right click below to add and/or modify charges.</div>
-                <div class="associated-incidents-user-holder" data-name="${$(this).data("cid")}"></div>
+                <div class="associated-incidents-user-holder" data-name="${$(this).data("cid")}">
+                ${aggregateCharges()}
+                </div>
                 <div class="manage-incidents-title-tag" data-id="${$(this).data("cid")}">Recommended Fine</div>
                 <div class="associated-incidents-fine-input" data-id="${$(this).data("cid")}"><img src="img/h7S5f9J.webp"> <input disabled placeholder="0" class="fine-recommended-amount" id="fine-recommended-amount" data-id="${$(this).data("cid")}" type="number"></div>
                 <div class="manage-incidents-title-tag" data-id="${$(this).data("cid")}">Recommended Sentence</div>
@@ -4895,7 +4913,9 @@ window.addEventListener("message", function (event) {
             ${canSendToCommunityService ? `<div id="community-service-button" class="control-button" data-id="${cid}"> <span class="fa-solid fa-person-digging" style="margin-top: 3.5px;"></span>Community Service</div>` : ''}
           </div>
         `;
-
+        if ($(".incidents-ghost-holder > .associated-incidents-user-container[data-id='" + cid + "']").length > 0) {
+          $(".incidents-ghost-holder > .associated-incidents-user-container[data-id='" + cid + "']").remove();
+        }
         $(".incidents-ghost-holder").prepend(
           `<div class="associated-incidents-user-container" data-id="${cid}">
               <div class="associated-incidents-user-title">${value.name} (#${cid})</div>
@@ -4926,15 +4946,22 @@ window.addEventListener("message", function (event) {
           .filter("[data-id='" + value.cid + "']")
           .val(value.recsentence);
 
-        const charges = value["charges"];
-        for (var i = 0; i < charges.length; i++) {
-          const randomNum = Math.ceil(
-            Math.random() * 1000
-          ).toString();
-          $(`[data-name="${cid}"]`).prepend(
-            `<div class="white-tag" data-link="${randomNum}" data-id="${cid}">${charges[i]}</div>`
-          );
-        }
+          const charges = value["charges"];
+          const chargesCount = {};
+          
+          for (let charge of charges) {
+              chargesCount[charge] = (chargesCount[charge] || 0) + 1;
+          }
+
+          $(`[data-name="${cid}"]`).empty();
+          
+          for (let charge in chargesCount) {
+            const randomNum = Math.ceil(Math.random() * 1000).toString();
+            const countText = chargesCount[charge] > 1 ? ` (x${chargesCount[charge]})` : '';
+            $(`[data-name="${cid}"]`).prepend(
+                `<div class="white-tag" data-link="${randomNum}" data-id="${cid}">${charge}${countText}</div>`
+              );
+          }
       });
     } else if (eventData.type == "incidentSearchPerson") {
       let table = eventData.data;
