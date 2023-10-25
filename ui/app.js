@@ -1749,6 +1749,7 @@ $(document).ready(() => {
     for (let charge in chargesMap) {
         let displayText = chargesMap[charge] > 1 ? `x${chargesMap[charge]} ${charge}` : charge;
         const randomNum = Math.ceil(Math.random() * 1000).toString();
+        aggregatedChargesHtml += `<div class="current-charges-tag" data-link="${randomNum}">${displayText}</div>`;
     }
 
     return aggregatedChargesHtml;
